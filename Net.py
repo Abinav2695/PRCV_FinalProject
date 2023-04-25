@@ -17,11 +17,11 @@ torch.manual_seed(random_seed)
 
 
 class Net(nn.Module):
-    def __init__(self, num_channels=26):
+    def __init__(self, input_channels=3, output_classes = 29):
         super(Net, self).__init__()
 
         # Define the layers of the network
-        self.conv1 = nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, stride=1, padding=1)
+        self.conv1 = nn.Conv2d(in_channels=input_channels, out_channels=32, kernel_size=3, stride=1, padding=1)
         self.relu1 = nn.ReLU()
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)  ##output size 32 * width/4 * height/4
 
@@ -37,7 +37,7 @@ class Net(nn.Module):
         self.relu4 = nn.ReLU()
         self.dropout1 = nn.Dropout(p=0.5)
 
-        self.fc2 = nn.Linear(in_features=1024, out_features=num_channels)  #26 alphabets
+        self.fc2 = nn.Linear(in_features=1024, out_features=output_classes)  #29 alphabets
 
 
     def forward(self, x):
@@ -63,6 +63,8 @@ class Net(nn.Module):
         x = self.fc2(x)
 
         return F.log_softmax(x)
+    
+
 
 def main():
 
