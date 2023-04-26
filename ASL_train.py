@@ -24,7 +24,7 @@ class ASL():
         self.network = Net()
         self.n_epochs = 10
         self.batch_size_train = 64
-        self.batch_size_test = 1
+        self.batch_size_test = 64
         self.learning_rate = 0.01
         self.momentum = 0.5
         self.log_interval = 10
@@ -32,7 +32,7 @@ class ASL():
     #load the training and validation dataset
     def load_data(self):
         train_loader = DataLoader(
-            torchvision.datasets.ImageFolder('asl_alphabet_train',
+            torchvision.datasets.ImageFolder('asl_alphabet_train/asl_alphabet_train',
                                     transform=torchvision.transforms.Compose([
                                         torchvision.transforms.Resize((32,32)),
                                         torchvision.transforms.ToTensor(),
@@ -43,7 +43,7 @@ class ASL():
             shuffle= True)
 
         test_loader = DataLoader(
-            torchvision.datasets.ImageFolder('asl_alphabet_test',
+            torchvision.datasets.ImageFolder('asl_alphabet_test/asl_alphabet_test',
                                     transform=torchvision.transforms.Compose([
                                         torchvision.transforms.Resize((32,32)),
                                         torchvision.transforms.ToTensor(),
@@ -56,10 +56,21 @@ class ASL():
     
 
     def run(self, epochs=1):
+        print('[INFO] Loading Data')
         train_loader, test_loader = self.load_data()
-
+        print('[INFO] Test classes: {}'.format(test_loader.dataset.classes))
+        print('[INFO] Train classes: {}'.format(train_loader.dataset.classes))
+        print('[INFO] Data loaded')
         # Load the previously trained model
-        model = Net()
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+            print("Using CUDA device")
+        else:
+            device = torch.device("cpu")
+            print("Using CPU")
+        
+        return
+        model = Net().to(device)
         # model.load_state_dict(torch.load('results/model.pth'))
         # Load the previously used optimizer state
         optimizer = optim.SGD(model.parameters(), lr=self.learning_rate,
@@ -73,19 +84,19 @@ class ASL():
         test_losses = []
         test_counter = [i * len(train_loader.dataset) for i in range(epochs + 1)]
 
-        self.test(model, test_loader, test_losses)
+        self.test(model, test_loader, test_losses, device)
         for epoch in range(1, epochs + 1):
-            self.train(model, epoch, optimizer, train_loader, train_losses, train_counter)
-            self.test(model, test_loader, test_losses)
+            self.train(model, epoch, optimizer, train_loader, train_losses, train_counter, device)
+            self.test(model, test_loader, test_losses, device)
         self.plot_curve(train_counter, train_losses, test_counter, test_losses)
 
     #train function
-    def train(self, model, epoch, optimizer, train_loader, train_losses, train_counter):
+    def train(self, model, epoch, optimizer, train_loader, train_losses, train_counter, device):
         model.train()
         for batch_idx, (data, target) in enumerate(train_loader):
             optimizer.zero_grad()
             # output = self.network(data)
-            
+            data, target = data.to(device), target.to(device)
             output = model(data)
             loss = F.nll_loss(output, target)
             loss.backward()
@@ -102,14 +113,16 @@ class ASL():
                 torch.save(optimizer.state_dict(), 'results/optimizer.pth')
 
     #test function
-    def test(self, model, test_loader, test_losses):
+    def test(self, model, test_loader, test_losses, device):
         # self.network.eval()
         model.eval()
         test_loss = 0
         correct = 0
         with torch.no_grad():
             for data, target in test_loader:
+                print(target)
                 # output = self.network(data)
+                data, target = data.to(device), target.to(device)
                 output = model(data)
                 test_loss += F.nll_loss(output, target, reduction='sum').item()
                 pred = output.data.max(1, keepdim=True)[1]
@@ -128,16 +141,14 @@ class ASL():
         plt.legend(['Train Loss', 'Test Loss'], loc='upper right')
         plt.xlabel('number of training examples seen')
         plt.ylabel('negative log likelihood loss')
-        plt.savefig('training_plot_1.png')
-
+        plt.savefig('training_plot_dummy.png')
     
 
-
-
 def main():
-
+    
+    print('[INFO] Started Training')
     asl_train = ASL()
-    asl_train.run(epochs=12)
+    asl_train.run(epochs=10)
 
 if __name__ == "__main__":
 

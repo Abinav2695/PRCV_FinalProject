@@ -32,10 +32,11 @@ class Net(nn.Module):
         self.conv3 = nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, stride=1, padding=1)
         self.relu3 = nn.ReLU()
         self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.dropout1 = nn.Dropout(p=0.5)
 
         self.fc1 = nn.Linear(in_features=128 * 4 * 4, out_features=1024)
         self.relu4 = nn.ReLU()
-        self.dropout1 = nn.Dropout(p=0.5)
+        self.dropout2 = nn.Dropout(p=0.5)
 
         self.fc2 = nn.Linear(in_features=1024, out_features=output_classes)  #29 alphabets
 
@@ -53,17 +54,30 @@ class Net(nn.Module):
         x = self.conv3(x)
         x = self.relu3(x)
         x = self.pool3(x)
+        x = self.dropout1(x)
         
         x = x.view(-1, 128 * 4 * 4)
 
         x = self.fc1(x)
         x = self.relu4(x)
-        x = self.dropout1(x)
+        x = self.dropout2(x)
 
         x = self.fc2(x)
 
         return F.log_softmax(x)
-    
+
+
+# Define the ResNet9 model
+class ResNet9(nn.Module):
+    def __init__(self, num_classes=29):
+        super().__init__()
+        self.model = torchvision.models.resnet18(pretrained=True)
+        self.model.fc = nn.Linear(512, num_classes)
+
+    def forward(self, x):
+        x = self.model(x)
+        return x
+
 
 
 def main():
