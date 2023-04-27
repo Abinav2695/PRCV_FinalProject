@@ -107,7 +107,7 @@ class RTD():
                 
         # release camera and close window
         self.cap.release()
-        self.cv2.destroyAllWindows()
+        cv2.destroyAllWindows()
 
 
 
